@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -81,10 +80,13 @@ func findGitignore(cwd string, attempt int) (string, bool) {
 	// Check if gitignore was found
 	_, err := os.Stat(gpath)
 	if !os.IsNotExist(err) {
-		return filepath.Clean(gpath), true
+		return gpath, true
+	}
+	if os.IsNotExist(err) {
+		// If not found, run again
+		return findGitignore(cwd, attempt+1)
 	}
 	handle(err)
 
-	// If not found, run again
 	return findGitignore(cwd, attempt+1)
 }
