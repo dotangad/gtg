@@ -31,18 +31,9 @@ func main() {
 	defer gtgf.Close()
 
 	// Check if file/pattern is already in gitignore
-	reader := bufio.NewReader(gtgf)
-	for {
-		line, err := reader.ReadString('\n')
-
-		if strings.TrimSpace(line) == os.Args[1] {
-			return
-		}
-
-		if err == io.EOF {
-			break
-		}
-		handle(err)
+	found, err = checkInFile(gtgf, os.Args[1])
+	if found {
+		return
 	}
 
 	// If not, append
@@ -55,6 +46,24 @@ func handle(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func checkInFile(f *os.File, p string) (bool, error) {
+	reader := bufio.NewReader(f)
+	for {
+		line, err := reader.ReadString('\n')
+
+		if strings.TrimSpace(line) == p {
+			return true, nil
+		}
+
+		if err == io.EOF {
+			break
+		}
+		handle(err)
+	}
+
+	return false, nil
 }
 
 func findGitignore(cwd string, attempt int) (string, bool) {
