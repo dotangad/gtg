@@ -1,13 +1,20 @@
 package main
 
 import (
-	"fmt"
+	"bufio"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
+	// Check args
+	if len(os.Args) < 2 {
+		log.Fatal("Usage: gtg filename --flags")
+	}
+
 	// Get current working directory
 	cwd, err := os.Getwd()
 	handle(err)
@@ -18,7 +25,30 @@ func main() {
 		log.Fatalf("Gitignore not found in path: %s", cwd)
 	}
 
-	fmt.Println(gitignore)
+	// Open gitignore file
+	gtgf, err := os.OpenFile(gitignore, os.O_APPEND|os.O_RDWR, os.ModePerm)
+	handle(err)
+	defer gtgf.Close()
+
+	// Check if file/pattern is already in gitignore
+	reader := bufio.NewReader(gtgf)
+	for {
+		line, err := reader.ReadString('\n')
+
+		if strings.TrimSpace(line) == os.Args[1] {
+			return
+		}
+
+		if err == io.EOF {
+			break
+		}
+		handle(err)
+	}
+
+	// If not, append
+	_, err = gtgf.WriteString(os.Args[1] + "\n")
+	handle(err)
+	gtgf.Sync()
 }
 
 func handle(err error) {
@@ -44,6 +74,7 @@ func findGitignore(cwd string, attempt int) (string, bool) {
 	if !os.IsNotExist(err) {
 		return filepath.Clean(gpath), true
 	}
+	handle(err)
 
 	// If not found, run again
 	return findGitignore(cwd, attempt+1)
