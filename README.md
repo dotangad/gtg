@@ -4,3 +4,6 @@ Install with -
 ```
 go get github.com/dotangad/gtg
 ```
+
+## TODO
+- [  ] Add tests
