@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func main() {
+	// Get current working directory
 	cwd, err := os.Getwd()
 	handle(err)
 
+	// Find gitignore
 	gitignore, found := findGitignore(cwd, 0)
 	if !found {
 		log.Fatalf("Gitignore not found in path: %s", cwd)
@@ -30,27 +33,18 @@ func findGitignore(cwd string, attempt int) (string, bool) {
 	}
 
 	// Construct prefix to traverse up directories
-	path := cwd
+	gpath := cwd
 	for i := 0; i < attempt; i++ {
-		path += "/.."
+		gpath += "/.."
 	}
-	path += "/.gitignore"
+	gpath += "/.gitignore"
 
 	// Check if gitignore was found
-	found, err := fileExists(path)
-	handle(err)
-	if found {
-		return path, true
+	_, err := os.Stat(gpath)
+	if !os.IsNotExist(err) {
+		return filepath.Clean(gpath), true
 	}
 
 	// If not found, run again
 	return findGitignore(cwd, attempt+1)
-}
-
-func fileExists(filename string) (bool, error) {
-	_, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return err != nil, err
 }
